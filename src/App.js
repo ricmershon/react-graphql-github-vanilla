@@ -59,6 +59,7 @@ class App extends Component {
         path: 'the-road-to-learn-react/the-road-to-react',
         organization: null,
         errors: null,
+        token: process.env.REACT_APP_GITHUB_PERSONAL_ACCESS_TOKEN
     }
 
     componentDidMount() {
@@ -77,7 +78,8 @@ class App extends Component {
     onFetchFromGitHub = async (path, cursor) => {
         try {
             let queryResult = await getIssuesOfRepository(path, cursor);
-            await this.setState(resolveIssuesQuery(queryResult, cursor))
+            console.log(queryResult)
+            this.setState(resolveIssuesQuery(queryResult, cursor))
             console.log(this.state)
         } catch(error) {
             console.error('Error fetching data.')
