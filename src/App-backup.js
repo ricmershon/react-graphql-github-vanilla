@@ -5,6 +5,8 @@ import Organization from './components/Organization';
 import axios from 'axios';
 import {
     TITLE,
+    GET_ORGANIZATION,
+    GET_REPOSITORY_OF_ORGANIZATION,
     GET_ISSUES_OF_REPOSITORY,
     ADD_STAR_TO_REPOSITORY,
     REMOVE_STAR_FROM_REPOSITORY
@@ -63,14 +65,17 @@ const addStarToRepository = (repositoryId) => {
 
 const resolveAddStarMutation = (mutationResult) => (state) => {
     const { viewerHasStarred } = mutationResult.data.data.addStar.starrable;
-
     return {
-        ...state,
-        organization: {
-            ...state.organization,
-            repository: {
-                ...state.organization.repository,
-                viewerHasStarred
+        state: {
+            organization: {
+                ...state.organization,
+                repository: {
+                    ...state.organization.repository,
+                    issues: {
+                        ...state.organization.repository.issues,
+                        viewerHasStarred
+                    }
+                }
             }
         }
     }
@@ -86,12 +91,16 @@ const removeStarFromRepository = (repositoryId) => {
 const resolveRemoveStarMutation = (mutationResult) => (state) => {
     const { viewerHasStarred } = mutationResult.data.data.removeStar.starrable;
     return {
-        ...state,
-        organization: {
-            ...state.organization,
-            repository: {
-                ...state.organization.repository,
-                viewerHasStarred
+        state: {
+            organization: {
+                ...state.organization,
+                repository: {
+                    ...state.organization.repository,
+                    issues: {
+                        ...state.organization.repository.issues,
+                        viewerHasStarred
+                    }
+                }
             }
         }
     }
@@ -117,11 +126,14 @@ class App extends Component {
         event.preventDefault();
     }
 
-  onFetchFromGitHub = (path, cursor) => {
-    getIssuesOfRepository(path, cursor).then(queryResult =>
-      this.setState(resolveIssuesQuery(queryResult, cursor)),
-    );
-  };
+    onFetchFromGitHub = async (path, cursor) => {
+        try {
+            let queryResult = await getIssuesOfRepository(path, cursor);
+            this.setState(resolveIssuesQuery(queryResult, cursor))
+        } catch(error) {
+            console.error('Error fetching data.')
+        }
+    }
 
     onFetchMoreIssues = () => {
         const { endCursor } = this.state.organization.repository.issues.pageInfo;
@@ -149,7 +161,7 @@ class App extends Component {
     render() {
         const { path, organization, errors } = this.state;
         return (
-            <>
+            <div className="App">
                 <h1>{ TITLE }</h1>
                 <form onSubmit={ this.onSubmit }>
                     <label htmlFor="url">
@@ -177,7 +189,7 @@ class App extends Component {
                         null
                     )
                 }
-            </>
+            </div>
         );        
     }
 }
