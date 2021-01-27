@@ -38,7 +38,6 @@ const resolveIssuesQuery= (queryResult, cursor) => (state) => {
     const { edges: newIssues } = data.organization.repository.issues;
     const updatedIssues = [...prevIssues, ...newIssues];
 
-
     return {
         organization: {
             ...data.organization,
@@ -63,14 +62,14 @@ const addStarToRepository = (repositoryId) => {
 
 const resolveAddStarMutation = (mutationResult) => (state) => {
     const { viewerHasStarred } = mutationResult.data.data.addStar.starrable;
-
+    const { totalCount } = state.organization.repository.stargazers;
     return {
-        ...state,
         organization: {
             ...state.organization,
             repository: {
                 ...state.organization.repository,
-                viewerHasStarred
+                viewerHasStarred,
+                stargazers: { totalCount: totalCount + 1 }
             }
         }
     }
@@ -85,13 +84,14 @@ const removeStarFromRepository = (repositoryId) => {
 
 const resolveRemoveStarMutation = (mutationResult) => (state) => {
     const { viewerHasStarred } = mutationResult.data.data.removeStar.starrable;
+    const { totalCount } = state.organization.repository.stargazers;
     return {
-        ...state,
         organization: {
             ...state.organization,
             repository: {
                 ...state.organization.repository,
-                viewerHasStarred
+                viewerHasStarred,
+                stargazers: { totalCount: totalCount - 1 }
             }
         }
     }
@@ -99,7 +99,7 @@ const resolveRemoveStarMutation = (mutationResult) => (state) => {
 
 class App extends Component {
     state = {
-        path: 'the-road-to-learn-react/the-road-to-react',
+        path: 'the-road-to-learn-react/the-road-to-learn-react',
         organization: null,
         errors: null,
     }
@@ -117,11 +117,14 @@ class App extends Component {
         event.preventDefault();
     }
 
-  onFetchFromGitHub = (path, cursor) => {
-    getIssuesOfRepository(path, cursor).then(queryResult =>
-      this.setState(resolveIssuesQuery(queryResult, cursor)),
-    );
-  };
+    onFetchFromGitHub = async (path, cursor) => {
+        try {
+            let queryResult = await getIssuesOfRepository(path, cursor)
+            this.setState(resolveIssuesQuery(queryResult, cursor))
+        } catch (error) {
+            console.error('Error fetching data.')
+        }
+    };
 
     onFetchMoreIssues = () => {
         const { endCursor } = this.state.organization.repository.issues.pageInfo;
